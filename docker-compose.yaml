@@ -1,0 +1,63 @@
+version: "3.3"
+# Here we will list all nodes/containers!
+services:
+# First container will be named node-master
+  node-master:
+# We will tell Docker to run the slaves first before running the Master Node
+    depends_on:
+      - node-slave1
+      - node-slave2
+# The image to be used is the image we've built before
+    image: cluster-base:latest
+# It explains itself, what it the container name
+    container_name: node-master
+    user: root
+# The hostname for this container
+    hostname: node-master
+# Connecting your terminal to the stdin and stdout stream of the container so you can see
+# all the messages it outputs
+    tty: true
+# Ports redirection to Host
+    ports:
+      - "4040:4040"
+      - "8088:8088"
+      - "50070:50070"
+      - "50030:50030"
+      - "8080:8080"
+      - "8042:8042"
+      - "8888:8888"
+# Linking this container to the following network and defining an alias to be used
+    networks:
+      cluster-network:
+        aliases:
+          - node-master
+# First Slave Node, same thing as previously seen
+  node-slave1:
+    image: cluster-base:latest
+    container_name: node-slave1
+    hostname: node-slave1
+    tty: true
+    ports:
+      - "7042:8042"
+    networks:
+      cluster-network:
+        aliases:
+          - node-slave1
+# Second Slave Node
+  node-slave2:
+    image: cluster-base:latest
+    container_name: node-slave2
+    hostname: node-slave2
+    tty: true
+    ports:
+      - "9042:8042"
+    networks:
+      cluster-network:
+        aliases:
+          - node-slave2
+# Defining a new network of Bridge type to be created
+networks:
+  cluster-network:
+    driver: bridge
+    ipam:
+      driver: default

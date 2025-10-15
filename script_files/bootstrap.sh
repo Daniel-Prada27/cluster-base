@@ -1,26 +1,30 @@
 #!/bin/bash
 
-# Format the HDFS Namenode if it hasn't been formatted already
-hdfs namenode -format
-
-# Start SSH service
 service ssh start
 
-# Start Hadoop and YARN services on the master node
 if [ "$HOSTNAME" = "node-master" ]; then
-    # Start HDFS and YARN services
-    start-dfs.sh && start-yarn.sh
-    echo "Hadoop and YARN started successfully on the master node."
+    # Format namenode only if not already formatted
+    if [ ! -d "/opt/hadoop/dfs/name" ]; then
+        echo "Formatting namenode..."
+        hdfs namenode -format -force
+    fi
 
-    # Start Jupyter notebook (no token and no password for access)
+    # Ensure SSH access to all nodes
+    ssh-keyscan -H node-master node-slave1 node-slave2 >> /root/.ssh/known_hosts
+
+    echo "Starting HDFS..."
+    start-dfs.sh
+    echo "Starting YARN..."
+    start-yarn.sh
+
+    echo "Starting Jupyter..."
     cd /root/lab
-    jupyter trust Bash-Interface.ipynb
-    jupyter trust Dask-Yarn.ipynb
-    jupyter trust Python-Spark.ipynb
-    jupyter trust Scala-Spark.ipynb
-
-    # Launch Jupyter Notebook server in the foreground
+    jupyter trust *.ipynb
     jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root
 else
-    echo "This is a slave node, skipping DFS and YARN startup."
+    echo "Slave node ready: $HOSTNAME"
+    tail -f /dev/null
 fi
+
+
+

@@ -1,40 +1,57 @@
 FROM ubuntu:bionic
 
 # showing to hadoop and spark where to find java!
-ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64/jre
-​
+ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
 # after downloading hadoop (a bit further) we have to inform any concerned
 # app where to find it
 ENV HADOOP_HOME=/opt/hadoop
-​
+
 # same for the hadoop configuration
 ENV HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
-​
+
 # and same for spark
 ENV SPARK_HOME=/opt/spark
-​
+
 # with this we can run all hadoop and spark scripts and commands directly from the shell
 # without using the absolute path
 ENV PATH="${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${SPARK_HOME}/bin:${SPARK_HOME}/sbin:${PATH}"
-​
+
 # just informing the hadoop version, this isn't really necessary
-ENV HADOOP_VERSION=2.7.0
-​
+ENV HADOOP_VERSION=3.4.1
+
 # if you happend to run pyspark from shell, it will launch it on a Jupyter Notebook
 # this is just two fancy lines, really no need for it
 ENV PYSPARK_DRIVER_PYTHON=jupyter
 ENV PYSPARK_DRIVER_PYTHON_OPTS='notebook'
-​
+
 # showing pyspark which "python" command to use
 ENV PYSPARK_PYTHON=python3
 
+# install dependencies
 RUN apt-get update && apt-get install -y \
     wget nano openjdk-8-jdk ssh openssh-server \
     python3 python3-pip python3-dev build-essential \
-    libssl-dev libffi-dev libpq-dev
+    libssl-dev libffi-dev libpq-dev \
+    sudo
+# Create the 'hdfs' user and set necessary Hadoop environment variables
+RUN useradd -m -d /home/hdfs -s /bin/bash hdfs
 
+# Set environment variables for Hadoop users
+ENV HDFS_NAMENODE_USER=root
+ENV HDFS_DATANODE_USER=root
+ENV HDFS_SECONDARYNAMENODE_USER=root
+
+ENV YARN_RESOURCEMANAGER_USER=root
+ENV YARN_NODEMANAGER_USER=root
+
+# Fix the cffi error
+RUN pip3 install --upgrade setuptools pip wheel
+RUN pip3 install cffi>=1.14.0
+
+# copy requirements and install python dependencies
 COPY /confs/requirements.req /
-RUN pip3 install -r requirements.req
+RUN pip3 install -v -r requirements.req
 RUN pip3 install dask[bag] --upgrade
 RUN pip3 install --upgrade toree
 RUN python3 -m bash_kernel.install
@@ -81,5 +98,17 @@ EXPOSE 8088
 RUN mkdir lab
 COPY notebooks/*.ipynb /root/lab/
 COPY datasets /root/lab/datasets
-​
+
+RUN ln -s /usr/bin/sudo /bin/sudo
+
+RUN echo "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> /opt/hadoop/etc/hadoop/hadoop-env.sh
+RUN mkdir -p /opt/hadoop/logs && chmod -R 777 /opt/hadoop
+
+
+RUN echo 'export HDFS_NAMENODE_USER=root' >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+RUN echo 'export HDFS_DATANODE_USER=root' >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+RUN echo 'export HDFS_SECONDARYNAMENODE_USER=root' >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+RUN echo 'export YARN_RESOURCEMANAGER_USER=root' >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+RUN echo 'export YARN_NODEMANAGER_USER=root' >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+
 ENTRYPOINT ["/bin/bash", "bootstrap.sh"]
