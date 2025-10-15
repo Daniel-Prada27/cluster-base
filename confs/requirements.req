@@ -3,7 +3,7 @@ matplotlib
 jupyter
 notebook
 jupyterlab
-pyspark
+pyspark==3.5.5
 numpy
 dask
 pandas

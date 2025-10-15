@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:jammy
 
 # showing to hadoop and spark where to find java!
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
@@ -32,8 +32,10 @@ ENV PYSPARK_PYTHON=python3
 RUN apt-get update && apt-get install -y \
     wget nano openjdk-8-jdk ssh openssh-server \
     python3 python3-pip python3-dev build-essential \
-    libssl-dev libffi-dev libpq-dev \
-    sudo
+    libssl-dev libffi-dev libpq-dev sudo && \
+    ln -sf python3 /usr/bin/python && \
+    ln -sf pip3 /usr/bin/pip
+
 # Create the 'hdfs' user and set necessary Hadoop environment variables
 RUN useradd -m -d /home/hdfs -s /bin/bash hdfs
 
@@ -56,12 +58,13 @@ RUN pip3 install dask[bag] --upgrade
 RUN pip3 install --upgrade toree
 RUN python3 -m bash_kernel.install
 
-# Download Hadoop 3.4.1
-RUN wget -P /tmp/ https://dlcdn.apache.org/hadoop/common/hadoop-3.4.1/hadoop-3.4.1.tar.gz
+# Copy Hadoop 3.4.1 from local download
+COPY /resources/hadoop-3.4.1.tar.gz /tmp/hadoop-3.4.1.tar.gz
 
 # Extract Hadoop and move to /opt
 RUN tar xvf /tmp/hadoop-3.4.1.tar.gz -C /tmp && \
-    mv /tmp/hadoop-3.4.1 /opt/hadoop
+    mv /tmp/hadoop-3.4.1 /opt/hadoop && \
+    rm /tmp/hadoop-3.4.1.tar.gz
 
 # Download Spark 
 RUN wget -P /tmp/ https://dlcdn.apache.org/spark/spark-3.5.6/spark-3.5.6-bin-hadoop3.tgz
@@ -81,7 +84,7 @@ COPY /confs/config /root/.ssh/
 RUN chmod 600 /root/.ssh/config
 
 COPY /confs/*.xml /opt/hadoop/etc/hadoop/
-COPY /confs/slaves /opt/hadoop/etc/hadoop/
+COPY /confs/workers /opt/hadoop/etc/hadoop/
 COPY /script_files/bootstrap.sh /
 COPY /confs/spark-defaults.conf ${SPARK_HOME}/conf
 RUN chmod +x /bootstrap.sh
@@ -98,8 +101,6 @@ EXPOSE 8088
 RUN mkdir lab
 COPY notebooks/*.ipynb /root/lab/
 COPY datasets /root/lab/datasets
-
-RUN ln -s /usr/bin/sudo /bin/sudo
 
 RUN echo "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> /opt/hadoop/etc/hadoop/hadoop-env.sh
 RUN mkdir -p /opt/hadoop/logs && chmod -R 777 /opt/hadoop
