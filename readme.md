@@ -1,11 +1,15 @@
 # Guía de Instalación y Configuración
 
+Instrucciones para iniciar un mini cluster local utilizando tres contenedores.
+
+Un contenedor que corresponde el nodo maestro, y dos contenedores que corresponden a nodos esclavos.
+
 ## Primer paso:
 
 Instalar **WSL** desde la terminal siguiendo el siguiente tutorial:  
 [Instalar WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
 
-Para dirigirse al directorio **root**, solo deben ejecutar el comando:
+Para dirigirse al directorio **home**, solo deben ejecutar el comando:
 
 ```bash
 $ cd
@@ -114,7 +118,7 @@ $ docker build . -t cluster-base
 
 ## Séptimo paso:
 
-Una vez construida la imagen, en el mismo directorio donde se ecuentra Dockerfile y docker-compose.
+Una vez construida la imagen, en el mismo directorio donde se ecuentra Dockerfile y docker-compose, ejecuten el siguiente comando para iniciar los conenedores.
 
 ```bash
 $ docker-compose up
