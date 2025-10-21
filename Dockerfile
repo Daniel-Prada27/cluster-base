@@ -99,8 +99,10 @@ EXPOSE 8888
 EXPOSE 8088
 
 RUN mkdir lab
-COPY notebooks/*.ipynb /root/lab/
-COPY datasets /root/lab/datasets
+
+# Uncomment when we need to have the notebooks and datasets built into the Docker Image
+#COPY notebooks/*.ipynb /root/lab/
+#COPY datasets /root/lab/datasets
 
 RUN echo "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> /opt/hadoop/etc/hadoop/hadoop-env.sh
 RUN mkdir -p /opt/hadoop/logs && chmod -R 777 /opt/hadoop

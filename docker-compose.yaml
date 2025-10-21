@@ -26,6 +26,11 @@ services:
       - "8080:8080"
       - "8042:8042"
       - "8888:8888"
+      - "9870:9870"
+#Linking the container to the following directories on the host machine:
+    volumes:
+      - ./notebooks:/root/lab
+      - ./datasets:/root/datasets
 # Linking this container to the following network and defining an alias to be used
     networks:
       cluster-network:
